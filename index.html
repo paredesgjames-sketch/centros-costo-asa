@@ -423,7 +423,6 @@
 
 <footer class="foot">
   <span>ASA · Control de Gestión — herramienta interna de consulta</span>
-  <span>Fuente de datos: Google Sheets (CSV publicado) · <a href="#" id="toggleSourceLink" style="color:inherit;text-decoration:underline;">cambiar fuente de datos</a></span>
 </footer>
 
 <script>
@@ -890,11 +889,14 @@ document.getElementById('loadBtn').addEventListener('click', () => {
   loadData(url);
 });
 document.getElementById('demoBtn').addEventListener('click', loadDemo);
-document.getElementById('toggleSourceLink').addEventListener('click', (e) => {
-  e.preventDefault();
-  const bar = document.getElementById('sourceBar');
-  bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
-});
+const toggleLink = document.getElementById('toggleSourceLink');
+if(toggleLink){
+  toggleLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    const bar = document.getElementById('sourceBar');
+    bar.style.display = bar.style.display === 'none' ? 'flex' : 'none';
+  });
+}
 
 function debounce(fn, ms){
   let t;

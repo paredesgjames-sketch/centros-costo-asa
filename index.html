@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centros de Costo · ASA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --forest:#1B4332;
+    --forest-deep:#0F2D22;
+    --sage:#74A57F;
+    --sage-pale:#DCE9DE;
+    --cream:#F6F4EE;
+    --paper:#FFFFFF;
+    --ink:#1B1A17;
+    --ink-soft:#5B5A54;
+    --line:#E3DFD3;
+    --indigo:#454F9E;
+    --amber:#C77D18;
+    --clay:#B4552F;
+    --danger:#B33F2E;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--sage-pale);}
+
+  /* ---------- Header ---------- */
+  header.top{
+    background:linear-gradient(160deg,var(--forest-deep) 0%,var(--forest) 62%,#2C5B41 100%);
+    color:#F3F1E7;
+    padding:30px 32px 26px;
+    position:relative;
+    overflow:hidden;
+  }
+  header.top::after{
+    content:"";
+    position:absolute; right:-60px; top:-60px;
+    width:260px; height:260px; border-radius:50%;
+    background:radial-gradient(circle, rgba(116,165,127,0.35) 0%, rgba(116,165,127,0) 70%);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--sage-pale);
+    opacity:.85;
+    margin:0 0 8px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:clamp(26px,3.4vw,36px);
+    margin:0 0 6px;
+    letter-spacing:-.01em;
+  }
+  header.top p.sub{
+    margin:0;
+    font-size:14px;
+    color:#D8E3D5;
+    max-width:640px;
+    line-height:1.5;
+  }
+  .status-pill{
+    position:absolute; top:26px; right:32px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    padding:6px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.18);
+    color:#E8EDE1;
+    display:flex; align-items:center; gap:7px;
+  }
+  .status-dot{width:7px;height:7px;border-radius:50%;background:#8FE3A6;}
+  .status-dot.err{background:#E88A76;}
+  .status-dot.loading{background:#E8C76B; animation:pulse 1s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  /* ---------- Source bar ---------- */
+  .source-bar{
+    background:var(--forest-deep);
+    padding:10px 32px;
+    display:flex; gap:10px; align-items:center;
+    flex-wrap:wrap;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .source-bar input[type=text]{
+    flex:1; min-width:240px;
+    background:rgba(255,255,255,0.07);
+    border:1px solid rgba(255,255,255,0.14);
+    color:#F3F1E7;
+    padding:8px 12px;
+    border-radius:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+  }
+  .source-bar input[type=text]::placeholder{color:rgba(243,241,231,0.4);}
+  .source-bar button{
+    background:var(--sage);
+    color:var(--forest-deep);
+    border:none;
+    padding:8px 16px;
+    border-radius:8px;
+    font-weight:600;
+    font-size:12.5px;
+    cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .source-bar button:hover{background:#88B893;}
+  .source-bar .hint{
+    color:rgba(243,241,231,0.55);
+    font-size:11.5px;
+  }
+
+  /* ---------- Layout ---------- */
+  main{padding:24px 32px 60px;}
+  .panel{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 20px;
+  }
+  .filters-panel{margin-bottom:18px;}
+  .filters-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
+    gap:14px 16px;
+  }
+  .field label{
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .field select, .field input{
+    width:100%;
+    padding:9px 10px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--cream);
+    color:var(--ink);
+    font-size:13.5px;
+    font-family:'Inter',sans-serif;
+  }
+  .field select:focus, .field input:focus{
+    outline:2px solid var(--sage);
+    outline-offset:1px;
+    border-color:var(--sage);
+  }
+  .field.dates{display:flex; gap:8px;}
+  .field.dates > div{flex:1;}
+  .field.dates label{margin-bottom:6px;}
+
+  .filters-footer{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:16px; padding-top:14px; border-top:1px dashed var(--line);
+    flex-wrap:wrap; gap:10px;
+  }
+  .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    background:var(--sage-pale);
+    color:var(--forest-deep);
+    padding:5px 10px;
+    border-radius:999px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .chip button{
+    border:none; background:none; cursor:pointer;
+    color:var(--forest-deep); font-weight:700; font-size:13px; line-height:1;
+    padding:0;
+  }
+  .btn-clear{
+    background:none; border:1px solid var(--line); color:var(--ink-soft);
+    padding:8px 14px; border-radius:8px; font-size:12.5px; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn-clear:hover{border-color:var(--clay); color:var(--clay);}
+
+  /* ---------- Results ---------- */
+  .results-header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:12px; flex-wrap:wrap; gap:10px;
+  }
+  .results-count{
+    font-family:'Fraunces',serif; font-size:19px; font-weight:600;
+  }
+  .results-count span{color:var(--sage);}
+  .toolbar{display:flex; gap:8px;}
+  .btn-export{
+    background:var(--forest);
+    color:#fff; border:none; padding:9px 16px; border-radius:8px;
+    font-size:12.5px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn-export:hover{background:var(--forest-deep);}
+
+  .table-wrap{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:auto;
+    max-height:62vh;
+  }
+  table{border-collapse:collapse; width:100%; font-size:13px;}
+  thead th{
+    position:sticky; top:0; z-index:2;
+    background:var(--forest);
+    color:#EFEDE2;
+    text-align:left;
+    padding:11px 14px;
+    font-size:10.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    user-select:none;
+  }
+  thead th:hover{background:var(--forest-deep);}
+  thead th .arrow{opacity:.5; margin-left:4px; font-size:10px;}
+  tbody td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  tbody tr:hover{background:var(--sage-pale);}
+  tbody tr:nth-child(even){background:#FBFAF6;}
+  tbody tr:nth-child(even):hover{background:var(--sage-pale);}
+
+  .code-chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    background:var(--cream);
+    border:1px solid var(--line);
+    padding:3px 8px;
+    border-radius:6px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+  .badge-status{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    padding:3px 9px;
+    border-radius:999px;
+    font-weight:600;
+  }
+  .badge-active{background:#E3F2E6; color:#256B3A;}
+  .badge-inactive{background:#F5E4DF; color:var(--danger);}
+
+  .empty-state{
+    padding:60px 20px; text-align:center; color:var(--ink-soft);
+  }
+  .empty-state h3{
+    font-family:'Fraunces',serif; font-size:18px; color:var(--ink); margin:0 0 6px;
+  }
+
+  .pagination-bar{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 4px; flex-wrap:wrap; gap:10px;
+  }
+  .pg-info, .pg-page{
+    font-size:12.5px; color:var(--ink-soft); font-family:'JetBrains Mono',monospace;
+  }
+  .pg-nav{display:flex; align-items:center; gap:12px;}
+  .pg-btn{
+    background:var(--paper); border:1px solid var(--line); color:var(--forest-deep);
+    padding:7px 14px; border-radius:8px; font-size:12.5px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .pg-btn:hover:not(:disabled){background:var(--sage-pale); border-color:var(--sage);}
+  .pg-btn:disabled{opacity:.4; cursor:not-allowed;}
+
+  footer.foot{
+    padding:20px 32px 40px; color:var(--ink-soft); font-size:11.5px;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  footer.foot a{color:var(--forest); text-decoration:none;}
+
+  @media (max-width:640px){
+    header.top, main, footer.foot, .source-bar{padding-left:16px; padding-right:16px;}
+    .status-pill{position:static; margin-top:12px; display:inline-flex;}
+
+    /* ---- Mobile: tabla -> tarjetas apiladas ---- */
+    .table-wrap{max-height:none; overflow:visible; border:none; background:none;}
+    table, thead, tbody, tr, td{display:block; width:100%;}
+    thead{display:none;}
+    tbody tr{
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      margin-bottom:12px;
+      padding:6px 4px;
+    }
+    tbody tr:hover, tbody tr:nth-child(even):hover{background:var(--paper);}
+    tbody tr:nth-child(even){background:var(--paper);}
+    tbody td{
+      display:flex; justify-content:space-between; align-items:center;
+      gap:12px; white-space:normal; text-align:right;
+      padding:9px 12px; border-bottom:1px solid var(--line);
+    }
+    tbody td:last-child{border-bottom:none;}
+    tbody td::before{
+      content:attr(data-label);
+      font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+      font-weight:600; color:var(--ink-soft); text-align:left; flex-shrink:0;
+    }
+    .filters-grid{grid-template-columns:1fr 1fr;}
+    .field.dates{grid-column:1 / -1;}
+    .results-header{align-items:center;}
+    .btn-export{width:100%;}
+    .toolbar{width:100%;}
+    .pagination-bar{flex-direction:column; align-items:stretch;}
+    .pg-nav{justify-content:space-between;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="eyebrow">Agrícola Santa Azul · Control de Gestión</div>
+  <h1>Buscador de Centros de Costo</h1>
+  <p class="sub">Consulta y filtra el maestro de centros de costo (EMPRESA · FUNDO · AREA · Idconsumidor) sincronizado desde Google Sheets.</p>
+  <div class="status-pill" id="statusPill">
+    <span class="status-dot loading" id="statusDot"></span>
+    <span id="statusText">Cargando datos…</span>
+  </div>
+</header>
+
+<div class="source-bar">
+  <input type="text" id="sheetUrlInput" placeholder="Pega aquí la URL CSV publicada de Google Sheets (Archivo → Compartir → Publicar en la web → CSV)">
+  <button id="loadBtn">Cargar</button>
+  <button id="demoBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.25);color:#F3F1E7;">Ver demo</button>
+  <span class="hint">La URL se usa solo en esta sesión — para dejarla fija, edítala en <code>CONFIG.SHEET_CSV_URL</code> dentro de index.html</span>
+</div>
+
+<main>
+  <section class="panel filters-panel">
+    <div class="filters-grid" id="filtersGrid">
+      <div class="field">
+        <label for="f-empresa">Empresa</label>
+        <select id="f-empresa"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label for="f-fundo">Fundo</label>
+        <select id="f-fundo"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label for="f-area">Área</label>
+        <select id="f-area"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label for="f-idconsumidor">ID Consumidor</label>
+        <input type="text" id="f-idconsumidor" placeholder="Ej. FN.PROD">
+      </div>
+      <div class="field">
+        <label for="f-descripcion">Descripción</label>
+        <input type="text" id="f-descripcion" placeholder="Buscar texto…">
+      </div>
+      <div class="field">
+        <label for="f-cuenta">Cuenta destino</label>
+        <select id="f-cuenta"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label for="f-jerarquia">Jerarquía</label>
+        <select id="f-jerarquia"><option value="">Todas</option></select>
+      </div>
+      <div class="field">
+        <label for="f-estado">Estado</label>
+        <select id="f-estado">
+          <option value="">Todos</option>
+          <option value="activo">Solo activos (sin fecha de baja)</option>
+          <option value="baja">Solo dados de baja</option>
+        </select>
+      </div>
+      <div class="field dates">
+        <div>
+          <label for="f-ingreso-desde">Ingreso desde</label>
+          <input type="date" id="f-ingreso-desde">
+        </div>
+        <div>
+          <label for="f-ingreso-hasta">Ingreso hasta</label>
+          <input type="date" id="f-ingreso-hasta">
+        </div>
+      </div>
+    </div>
+    <div class="filters-footer">
+      <div class="chip-row" id="chipRow"></div>
+      <button class="btn-clear" id="clearBtn">Limpiar filtros</button>
+    </div>
+  </section>
+
+  <section class="results-header">
+    <div class="results-count"><span id="resultCount">0</span> centros de costo encontrados</div>
+    <div class="toolbar">
+      <button class="btn-export" id="exportBtn">Exportar CSV filtrado</button>
+    </div>
+  </section>
+
+  <div class="table-wrap">
+    <table id="dataTable">
+      <thead>
+        <tr id="headRow"></tr>
+      </thead>
+      <tbody id="bodyRows"></tbody>
+    </table>
+  </div>
+</main>
+
+<footer class="foot">
+  <span>ASA · Control de Gestión — herramienta interna de consulta</span>
+  <span>Fuente de datos: Google Sheets (CSV publicado) · Actualiza la hoja y presiona "Cargar" para refrescar</span>
+</footer>
+
+<script>
+/* ======================= CONFIG ======================= */
+/* Reemplaza esta URL por el enlace CSV publicado de tu Google Sheet:
+   Archivo → Compartir → "Publicar en la web" → selecciona la hoja → formato CSV
+   La URL luce así:
+   https://docs.google.com/spreadsheets/d/e/2PACX-XXXXXXX/pub?gid=0&single=true&output=csv */
+const CONFIG = {
+  SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS6VC1If1OTw6xli141HV1_iZMJ-uQSLTgOKDCGkyawfp0U5cLP7NBsBAb0lZoxCtCUOvbBhahbNx01/pub?gid=0&single=true&output=csv"
+};
+
+/* Columnas esperadas (coinciden con el maestro de CeCo) */
+const COLUMNS = [
+  {key:"EMPRESA", label:"Empresa"},
+  {key:"FUNDO", label:"Fundo"},
+  {key:"AREA", label:"Área"},
+  {key:"Idconsumidor", label:"ID Consumidor"},
+  {key:"Descripcion", label:"Descripción"},
+  {key:"Fecha_ingreso", label:"F. Ingreso"},
+  {key:"Fecha_baja", label:"F. Baja"},
+  {key:"Cuenta_destino", label:"Cuenta destino"},
+  {key:"Jerarquia", label:"Jerarquía"}
+];
+
+const EMPRESA_COLORS = {};
+const PALETTE = ["#1B4332","#454F9E","#C77D18","#B4552F","#74A57F","#8E5572","#3E6990"];
+
+let RAW_ROWS = [];
+let SORT_STATE = {key:null, dir:1};
+let DEMO_MODE = false;
+let CURRENT_PAGE = 1;
+const PAGE_SIZE = 100;
+
+/* ======================= DATOS DE SIMULACIÓN ======================= */
+/* Set de ejemplo para previsualizar la app sin depender aún de Google Sheets.
+   Se usa automáticamente si CONFIG.SHEET_CSV_URL está vacío. */
+const SAMPLE_DATA = [
+  {EMPRESA:"INTERANDINA", FUNDO:"Nonaka", AREA:"PRODUCCION", Idconsumidor:"FN.PROD", Descripcion:"PRODUCCION - FUNDO NONAKA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112222"},
+  {EMPRESA:"INTERANDINA", FUNDO:"Nonaka", AREA:"COSECHA", Idconsumidor:"FN.COSE", Descripcion:"COSECHA ARANDANO - FUNDO NONAKA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112223"},
+  {EMPRESA:"INTERANDINA", FUNDO:"Nonaka", AREA:"RIEGO", Idconsumidor:"FN.RIEG", Descripcion:"RIEGO TECNIFICADO - FUNDO NONAKA", Fecha_ingreso:"1/01/2026", Fecha_baja:"15/06/2026", Cuenta_destino:"92", Jerarquia:"1112224"},
+  {EMPRESA:"ASA", FUNDO:"Huache", AREA:"PRODUCCION", Idconsumidor:"HU.PROD", Descripcion:"PRODUCCION ARANDANO - FUNDO HUACHE", Fecha_ingreso:"3/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112301"},
+  {EMPRESA:"ASA", FUNDO:"Huache", AREA:"COSECHA", Idconsumidor:"HU.COSE", Descripcion:"COSECHA ARANDANO - FUNDO HUACHE", Fecha_ingreso:"3/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112302"},
+  {EMPRESA:"ASA", FUNDO:"Huache", AREA:"SANIDAD", Idconsumidor:"HU.SANI", Descripcion:"CONTROL FITOSANITARIO - FUNDO HUACHE", Fecha_ingreso:"3/01/2026", Fecha_baja:"", Cuenta_destino:"93", Jerarquia:"1112303"},
+  {EMPRESA:"ASA", FUNDO:"Huache", AREA:"MANTENIMIENTO", Idconsumidor:"HU.MANT", Descripcion:"MANTENIMIENTO INFRAESTRUCTURA RIEGO", Fecha_ingreso:"3/01/2026", Fecha_baja:"20/05/2026", Cuenta_destino:"94", Jerarquia:"1112304"},
+  {EMPRESA:"ASA", FUNDO:"ASA", AREA:"ADMINISTRACION", Idconsumidor:"ASA.ADM", Descripcion:"ADMINISTRACION GENERAL - FUNDO ASA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"95", Jerarquia:"1112401"},
+  {EMPRESA:"ASA", FUNDO:"ASA", AREA:"PRODUCCION", Idconsumidor:"ASA.PROD", Descripcion:"PRODUCCION PALTA - FUNDO ASA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112402"},
+  {EMPRESA:"ASA", FUNDO:"ASA", AREA:"COSECHA", Idconsumidor:"ASA.COSE", Descripcion:"COSECHA PALTA - FUNDO ASA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112403"},
+  {EMPRESA:"ASA", FUNDO:"San Telmo", AREA:"PRODUCCION", Idconsumidor:"ST.PROD", Descripcion:"PRODUCCION PALTA - FUNDO SAN TELMO", Fecha_ingreso:"5/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112501"},
+  {EMPRESA:"ASA", FUNDO:"San Telmo", AREA:"RIEGO", Idconsumidor:"ST.RIEG", Descripcion:"RIEGO TECNIFICADO - FUNDO SAN TELMO", Fecha_ingreso:"5/01/2026", Fecha_baja:"", Cuenta_destino:"92", Jerarquia:"1112502"},
+  {EMPRESA:"ASA", FUNDO:"San Telmo", AREA:"SANIDAD", Idconsumidor:"ST.SANI", Descripcion:"CONTROL FITOSANITARIO - FUNDO SAN TELMO", Fecha_ingreso:"5/01/2026", Fecha_baja:"10/04/2026", Cuenta_destino:"93", Jerarquia:"1112503"},
+  {EMPRESA:"ASA", FUNDO:"El Alto", AREA:"PRODUCCION", Idconsumidor:"EA.PROD", Descripcion:"PRODUCCION ARANDANO - FUNDO EL ALTO", Fecha_ingreso:"8/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112601"},
+  {EMPRESA:"ASA", FUNDO:"El Alto", AREA:"COSECHA", Idconsumidor:"EA.COSE", Descripcion:"COSECHA ARANDANO - FUNDO EL ALTO", Fecha_ingreso:"8/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112602"},
+  {EMPRESA:"ASA", FUNDO:"El Alto", AREA:"MANTENIMIENTO", Idconsumidor:"EA.MANT", Descripcion:"MANTENIMIENTO MAQUINARIA - FUNDO EL ALTO", Fecha_ingreso:"8/01/2026", Fecha_baja:"", Cuenta_destino:"94", Jerarquia:"1112603"},
+  {EMPRESA:"INTERANDINA", FUNDO:"Nonaka", AREA:"ADMINISTRACION", Idconsumidor:"FN.ADM", Descripcion:"ADMINISTRACION - FUNDO NONAKA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"95", Jerarquia:"1112225"},
+  {EMPRESA:"INTERANDINA", FUNDO:"Nonaka", AREA:"MANTENIMIENTO", Idconsumidor:"FN.MANT", Descripcion:"MANTENIMIENTO GENERAL - FUNDO NONAKA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"94", Jerarquia:"1112226"},
+  {EMPRESA:"ASA", FUNDO:"Huache", AREA:"RIEGO", Idconsumidor:"HU.RIEG", Descripcion:"RIEGO TECNIFICADO - FUNDO HUACHE", Fecha_ingreso:"3/01/2026", Fecha_baja:"", Cuenta_destino:"92", Jerarquia:"1112305"},
+  {EMPRESA:"ASA", FUNDO:"ASA", AREA:"SANIDAD", Idconsumidor:"ASA.SANI", Descripcion:"CONTROL FITOSANITARIO - FUNDO ASA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"93", Jerarquia:"1112404"},
+  {EMPRESA:"ASA", FUNDO:"ASA", AREA:"MANTENIMIENTO", Idconsumidor:"ASA.MANT", Descripcion:"MANTENIMIENTO PLANTA EMPAQUE - FUNDO ASA", Fecha_ingreso:"1/01/2026", Fecha_baja:"28/03/2026", Cuenta_destino:"94", Jerarquia:"1112405"},
+  {EMPRESA:"ASA", FUNDO:"San Telmo", AREA:"COSECHA", Idconsumidor:"ST.COSE", Descripcion:"COSECHA PALTA - FUNDO SAN TELMO", Fecha_ingreso:"5/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112504"},
+  {EMPRESA:"ASA", FUNDO:"San Telmo", AREA:"ADMINISTRACION", Idconsumidor:"ST.ADM", Descripcion:"ADMINISTRACION - FUNDO SAN TELMO", Fecha_ingreso:"5/01/2026", Fecha_baja:"", Cuenta_destino:"95", Jerarquia:"1112505"},
+  {EMPRESA:"ASA", FUNDO:"El Alto", AREA:"SANIDAD", Idconsumidor:"EA.SANI", Descripcion:"CONTROL FITOSANITARIO - FUNDO EL ALTO", Fecha_ingreso:"8/01/2026", Fecha_baja:"", Cuenta_destino:"93", Jerarquia:"1112604"},
+  {EMPRESA:"ASA", FUNDO:"El Alto", AREA:"ADMINISTRACION", Idconsumidor:"EA.ADM", Descripcion:"ADMINISTRACION - FUNDO EL ALTO", Fecha_ingreso:"8/01/2026", Fecha_baja:"", Cuenta_destino:"95", Jerarquia:"1112605"},
+  {EMPRESA:"INTERANDINA", FUNDO:"Nonaka", AREA:"SANIDAD", Idconsumidor:"FN.SANI", Descripcion:"CONTROL FITOSANITARIO - FUNDO NONAKA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"93", Jerarquia:"1112227"},
+  {EMPRESA:"ASA", FUNDO:"Huache", AREA:"ADMINISTRACION", Idconsumidor:"HU.ADM", Descripcion:"ADMINISTRACION - FUNDO HUACHE", Fecha_ingreso:"3/01/2026", Fecha_baja:"", Cuenta_destino:"95", Jerarquia:"1112306"},
+  {EMPRESA:"ASA", FUNDO:"ASA", AREA:"RIEGO", Idconsumidor:"ASA.RIEG", Descripcion:"RIEGO TECNIFICADO - FUNDO ASA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"92", Jerarquia:"1112406"},
+  {EMPRESA:"ASA", FUNDO:"San Telmo", AREA:"MANTENIMIENTO", Idconsumidor:"ST.MANT", Descripcion:"MANTENIMIENTO INFRAESTRUCTURA - FUNDO SAN TELMO", Fecha_ingreso:"5/01/2026", Fecha_baja:"", Cuenta_destino:"94", Jerarquia:"1112506"},
+  {EMPRESA:"ASA", FUNDO:"El Alto", AREA:"RIEGO", Idconsumidor:"EA.RIEG", Descripcion:"RIEGO TECNIFICADO - FUNDO EL ALTO", Fecha_ingreso:"8/01/2026", Fecha_baja:"12/02/2026", Cuenta_destino:"92", Jerarquia:"1112606"},
+  {EMPRESA:"INTERANDINA", FUNDO:"Nonaka", AREA:"COSECHA", Idconsumidor:"FN.COSE2", Descripcion:"COSECHA PALTA - FUNDO NONAKA", Fecha_ingreso:"1/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112228"},
+  {EMPRESA:"ASA", FUNDO:"Interandina", AREA:"PRODUCCION", Idconsumidor:"INT.PROD", Descripcion:"PRODUCCION ARANDANO - FUNDO INTERANDINA", Fecha_ingreso:"10/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112701"},
+  {EMPRESA:"ASA", FUNDO:"Interandina", AREA:"COSECHA", Idconsumidor:"INT.COSE", Descripcion:"COSECHA ARANDANO - FUNDO INTERANDINA", Fecha_ingreso:"10/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112702"},
+  {EMPRESA:"ASA", FUNDO:"Interandina", AREA:"SANIDAD", Idconsumidor:"INT.SANI", Descripcion:"CONTROL FITOSANITARIO - FUNDO INTERANDINA", Fecha_ingreso:"10/01/2026", Fecha_baja:"", Cuenta_destino:"93", Jerarquia:"1112703"},
+  {EMPRESA:"ASA", FUNDO:"Interandina", AREA:"ADMINISTRACION", Idconsumidor:"INT.ADM", Descripcion:"ADMINISTRACION - FUNDO INTERANDINA", Fecha_ingreso:"10/01/2026", Fecha_baja:"", Cuenta_destino:"95", Jerarquia:"1112704"},
+  {EMPRESA:"ASA", FUNDO:"ASA", AREA:"PRODUCCION", Idconsumidor:"ASA.PROD2", Descripcion:"PRODUCCION ARANDANO - FUNDO ASA", Fecha_ingreso:"1/01/2026", Fecha_baja:"30/06/2026", Cuenta_destino:"91", Jerarquia:"1112407"},
+  {EMPRESA:"ASA", FUNDO:"Huache", AREA:"COSECHA", Idconsumidor:"HU.COSE2", Descripcion:"COSECHA PALTA - FUNDO HUACHE", Fecha_ingreso:"3/01/2026", Fecha_baja:"", Cuenta_destino:"91", Jerarquia:"1112307"}
+];
+
+/* ======================= CSV PARSER ======================= */
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i], next = text[i+1];
+    if(inQuotes){
+      if(c === '"' && next === '"'){ field += '"'; i++; }
+      else if(c === '"'){ inQuotes = false; }
+      else { field += c; }
+    } else {
+      if(c === '"'){ inQuotes = true; }
+      else if(c === ','){ row.push(field); field = ""; }
+      else if(c === '\r'){ /* skip */ }
+      else if(c === '\n'){ row.push(field); rows.push(row); row = []; field = ""; }
+      else { field += c; }
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(v => v.trim() !== ""));
+}
+
+function rowsToObjects(rows){
+  if(!rows.length) return [];
+  const header = rows[0].map(h => h.trim());
+  return rows.slice(1).map(r => {
+    const obj = {};
+    header.forEach((h,i) => { obj[h] = (r[i] ?? "").trim(); });
+    return obj;
+  });
+}
+
+/* ======================= DATA LOADING ======================= */
+function loadDemo(){
+  DEMO_MODE = true;
+  RAW_ROWS = JSON.parse(JSON.stringify(SAMPLE_DATA));
+  document.getElementById('statusDot').className = 'status-dot';
+  document.getElementById('statusText').textContent = RAW_ROWS.length + ' registros (datos de simulación)';
+  buildFilterOptions();
+  applyFilters();
+}
+
+async function loadData(url){
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot loading';
+  text.textContent = 'Cargando datos…';
+  DEMO_MODE = false;
+  if(!url){
+    loadDemo();
+    return;
+  }
+  try{
+    const res = await fetch(url, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const csvText = await res.text();
+    const rows = parseCSV(csvText);
+    RAW_ROWS = rowsToObjects(rows);
+    dot.className = 'status-dot';
+    text.textContent = RAW_ROWS.length + ' registros cargados';
+    buildFilterOptions();
+    applyFilters();
+  }catch(err){
+    dot.className = 'status-dot err';
+    text.textContent = 'Error al cargar: ' + err.message;
+    renderEmpty("No se pudo cargar la hoja. Verifica que esté publicada como CSV y sea de acceso público.");
+  }
+}
+
+/* ======================= FILTER OPTIONS ======================= */
+function uniqueSorted(arr){
+  return [...new Set(arr.filter(v => v !== undefined && v !== "" ))].sort((a,b)=>a.localeCompare(b,'es'));
+}
+
+function fillSelect(id, values, keepValue){
+  const sel = document.getElementById(id);
+  const current = keepValue !== undefined ? keepValue : sel.value;
+  const placeholder = sel.options[0];
+  sel.innerHTML = "";
+  sel.appendChild(placeholder);
+  values.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  if(values.includes(current)) sel.value = current;
+  else sel.value = "";
+}
+
+function buildFilterOptions(){
+  fillSelect('f-empresa', uniqueSorted(RAW_ROWS.map(r=>r.EMPRESA)));
+  fillSelect('f-cuenta', uniqueSorted(RAW_ROWS.map(r=>r.Cuenta_destino)));
+  fillSelect('f-jerarquia', uniqueSorted(RAW_ROWS.map(r=>r.Jerarquia)));
+  updateFundoOptions();
+  updateAreaOptions();
+
+  RAW_ROWS.forEach(r => {
+    if(r.EMPRESA && !(r.EMPRESA in EMPRESA_COLORS)){
+      EMPRESA_COLORS[r.EMPRESA] = PALETTE[Object.keys(EMPRESA_COLORS).length % PALETTE.length];
+    }
+  });
+}
+
+function updateFundoOptions(){
+  const empresa = document.getElementById('f-empresa').value;
+  const pool = empresa ? RAW_ROWS.filter(r => r.EMPRESA === empresa) : RAW_ROWS;
+  fillSelect('f-fundo', uniqueSorted(pool.map(r=>r.FUNDO)));
+}
+
+function updateAreaOptions(){
+  const empresa = document.getElementById('f-empresa').value;
+  const fundo = document.getElementById('f-fundo').value;
+  let pool = RAW_ROWS;
+  if(empresa) pool = pool.filter(r => r.EMPRESA === empresa);
+  if(fundo) pool = pool.filter(r => r.FUNDO === fundo);
+  fillSelect('f-area', uniqueSorted(pool.map(r=>r.AREA)));
+}
+
+/* ======================= FILTERING ======================= */
+function getFilterState(){
+  return {
+    empresa: document.getElementById('f-empresa').value,
+    fundo: document.getElementById('f-fundo').value,
+    area: document.getElementById('f-area').value,
+    idconsumidor: document.getElementById('f-idconsumidor').value.trim().toLowerCase(),
+    descripcion: document.getElementById('f-descripcion').value.trim().toLowerCase(),
+    cuenta: document.getElementById('f-cuenta').value,
+    jerarquia: document.getElementById('f-jerarquia').value,
+    estado: document.getElementById('f-estado').value,
+    ingresoDesde: document.getElementById('f-ingreso-desde').value,
+    ingresoHasta: document.getElementById('f-ingreso-hasta').value
+  };
+}
+
+function parseFecha(str){
+  if(!str) return null;
+  // admite dd/mm/yyyy o yyyy-mm-dd
+  let m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if(m) return new Date(+m[3], +m[2]-1, +m[1]);
+  m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return new Date(+m[1], +m[2]-1, +m[3]);
+  const d = new Date(str);
+  return isNaN(d) ? null : d;
+}
+
+function applyFilters(resetPage){
+  if(resetPage !== false) CURRENT_PAGE = 1;
+  const f = getFilterState();
+  let rows = RAW_ROWS.filter(r => {
+    if(f.empresa && r.EMPRESA !== f.empresa) return false;
+    if(f.fundo && r.FUNDO !== f.fundo) return false;
+    if(f.area && r.AREA !== f.area) return false;
+    if(f.cuenta && r.Cuenta_destino !== f.cuenta) return false;
+    if(f.jerarquia && r.Jerarquia !== f.jerarquia) return false;
+    if(f.idconsumidor && !(r.Idconsumidor||"").toLowerCase().includes(f.idconsumidor)) return false;
+    if(f.descripcion && !(r.Descripcion||"").toLowerCase().includes(f.descripcion)) return false;
+    if(f.estado === 'activo' && r.Fecha_baja) return false;
+    if(f.estado === 'baja' && !r.Fecha_baja) return false;
+    if(f.ingresoDesde || f.ingresoHasta){
+      const d = parseFecha(r.Fecha_ingreso);
+      if(!d) return false;
+      if(f.ingresoDesde && d < new Date(f.ingresoDesde)) return false;
+      if(f.ingresoHasta && d > new Date(f.ingresoHasta)) return false;
+    }
+    return true;
+  });
+
+  if(SORT_STATE.key){
+    rows = rows.slice().sort((a,b)=>{
+      const av = (a[SORT_STATE.key]||"").toLowerCase();
+      const bv = (b[SORT_STATE.key]||"").toLowerCase();
+      return av.localeCompare(bv,'es') * SORT_STATE.dir;
+    });
+  }
+
+  window.__filteredRows = rows; // set completo, para exportar
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  if(CURRENT_PAGE > totalPages) CURRENT_PAGE = totalPages;
+  const start = (CURRENT_PAGE - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+  renderTable(pageRows);
+  renderPagination(rows.length, totalPages);
+  renderChips(f);
+  document.getElementById('resultCount').textContent = rows.length;
+}
+
+/* ======================= RENDERING ======================= */
+function renderHead(){
+  const headRow = document.getElementById('headRow');
+  headRow.innerHTML = "";
+  COLUMNS.forEach(col => {
+    const th = document.createElement('th');
+    th.textContent = col.label;
+    const arrow = document.createElement('span');
+    arrow.className = 'arrow';
+    arrow.textContent = SORT_STATE.key === col.key ? (SORT_STATE.dir === 1 ? '▲' : '▼') : '↕';
+    th.appendChild(arrow);
+    th.addEventListener('click', () => {
+      if(SORT_STATE.key === col.key) SORT_STATE.dir *= -1;
+      else { SORT_STATE.key = col.key; SORT_STATE.dir = 1; }
+      applyFilters(false);
+    });
+    headRow.appendChild(th);
+  });
+}
+
+function renderTable(rows){
+  const body = document.getElementById('bodyRows');
+  body.innerHTML = "";
+  renderHead();
+
+  if(!rows.length){
+    renderEmpty("Ningún centro de costo coincide con estos filtros.");
+    return;
+  }
+
+  const frag = document.createDocumentFragment();
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    COLUMNS.forEach(col => {
+      const td = document.createElement('td');
+      td.setAttribute('data-label', col.label);
+      if(col.key === 'EMPRESA' && r.EMPRESA){
+        const chip = document.createElement('span');
+        chip.className = 'code-chip';
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.style.background = EMPRESA_COLORS[r.EMPRESA] || '#999';
+        chip.appendChild(dot);
+        chip.appendChild(document.createTextNode(r.EMPRESA));
+        td.appendChild(chip);
+      } else if(col.key === 'Idconsumidor' && r.Idconsumidor){
+        const chip = document.createElement('span');
+        chip.className = 'code-chip';
+        chip.textContent = r.Idconsumidor;
+        td.appendChild(chip);
+      } else if(col.key === 'Fecha_baja'){
+        if(r.Fecha_baja){
+          const b = document.createElement('span');
+          b.className = 'badge-status badge-inactive';
+          b.textContent = r.Fecha_baja;
+          td.appendChild(b);
+        } else {
+          const b = document.createElement('span');
+          b.className = 'badge-status badge-active';
+          b.textContent = 'ACTIVO';
+          td.appendChild(b);
+        }
+      } else {
+        td.textContent = r[col.key] || '';
+      }
+      tr.appendChild(td);
+    });
+    frag.appendChild(tr);
+  });
+  body.appendChild(frag);
+}
+
+function renderEmpty(message){
+  const body = document.getElementById('bodyRows');
+  body.innerHTML = "";
+  const tr = document.createElement('tr');
+  const td = document.createElement('td');
+  td.colSpan = COLUMNS.length;
+  td.innerHTML = `<div class="empty-state"><h3>Sin resultados</h3><p>${message}</p></div>`;
+  tr.appendChild(td);
+  body.appendChild(tr);
+}
+
+function renderChips(f){
+  const chipRow = document.getElementById('chipRow');
+  chipRow.innerHTML = "";
+  const active = [
+    ['empresa', f.empresa], ['fundo', f.fundo], ['area', f.area],
+    ['idconsumidor', f.idconsumidor], ['descripcion', f.descripcion],
+    ['cuenta', f.cuenta], ['jerarquia', f.jerarquia], ['estado', f.estado],
+    ['ingresoDesde', f.ingresoDesde], ['ingresoHasta', f.ingresoHasta]
+  ].filter(([,v]) => v);
+
+  active.forEach(([key, val]) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = val;
+    const btn = document.createElement('button');
+    btn.textContent = '×';
+    btn.addEventListener('click', () => clearSingleFilter(key));
+    chip.appendChild(btn);
+    chipRow.appendChild(chip);
+  });
+}
+
+function clearSingleFilter(key){
+  const map = {
+    empresa:'f-empresa', fundo:'f-fundo', area:'f-area',
+    idconsumidor:'f-idconsumidor', descripcion:'f-descripcion',
+    cuenta:'f-cuenta', jerarquia:'f-jerarquia', estado:'f-estado',
+    ingresoDesde:'f-ingreso-desde', ingresoHasta:'f-ingreso-hasta'
+  };
+  document.getElementById(map[key]).value = "";
+  if(key === 'empresa'){ updateFundoOptions(); updateAreaOptions(); }
+  if(key === 'fundo'){ updateAreaOptions(); }
+  applyFilters();
+}
+
+function renderPagination(totalRows, totalPages){
+  let bar = document.getElementById('paginationBar');
+  if(!bar){
+    bar = document.createElement('div');
+    bar.id = 'paginationBar';
+    bar.className = 'pagination-bar';
+    document.querySelector('.table-wrap').insertAdjacentElement('afterend', bar);
+  }
+  bar.innerHTML = "";
+  if(totalRows === 0) return;
+
+  const info = document.createElement('span');
+  info.className = 'pg-info';
+  const start = (CURRENT_PAGE - 1) * PAGE_SIZE + 1;
+  const end = Math.min(CURRENT_PAGE * PAGE_SIZE, totalRows);
+  info.textContent = `Mostrando ${start}–${end} de ${totalRows}`;
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'pg-btn';
+  prevBtn.textContent = '← Anterior';
+  prevBtn.disabled = CURRENT_PAGE <= 1;
+  prevBtn.addEventListener('click', () => { CURRENT_PAGE--; applyFilters(false); });
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'pg-btn';
+  nextBtn.textContent = 'Siguiente →';
+  nextBtn.disabled = CURRENT_PAGE >= totalPages;
+  nextBtn.addEventListener('click', () => { CURRENT_PAGE++; applyFilters(false); });
+
+  const pageLabel = document.createElement('span');
+  pageLabel.className = 'pg-page';
+  pageLabel.textContent = `Página ${CURRENT_PAGE} de ${totalPages}`;
+
+  bar.appendChild(info);
+  const nav = document.createElement('div');
+  nav.className = 'pg-nav';
+  nav.appendChild(prevBtn);
+  nav.appendChild(pageLabel);
+  nav.appendChild(nextBtn);
+  bar.appendChild(nav);
+}
+
+/* ======================= EXPORT ======================= */
+function exportCSV(){
+  const rows = window.__filteredRows || [];
+  if(!rows.length) return;
+  const header = COLUMNS.map(c => c.key).join(',');
+  const lines = rows.map(r => COLUMNS.map(c => {
+    let v = (r[c.key] || '').toString().replace(/"/g,'""');
+    if(v.includes(',') || v.includes('"')) v = `"${v}"`;
+    return v;
+  }).join(','));
+  const csv = [header, ...lines].join('\n');
+  const blob = new Blob(["\uFEFF" + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `centros_costo_filtrado_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ======================= EVENTS ======================= */
+document.getElementById('f-empresa').addEventListener('change', () => { updateFundoOptions(); updateAreaOptions(); applyFilters(); });
+document.getElementById('f-fundo').addEventListener('change', () => { updateAreaOptions(); applyFilters(); });
+['f-area','f-cuenta','f-jerarquia','f-estado','f-ingreso-desde','f-ingreso-hasta'].forEach(id => {
+  document.getElementById(id).addEventListener('change', applyFilters);
+});
+['f-idconsumidor','f-descripcion'].forEach(id => {
+  document.getElementById(id).addEventListener('input', debounce(applyFilters, 200));
+});
+document.getElementById('clearBtn').addEventListener('click', () => {
+  document.querySelectorAll('.field select, .field input').forEach(el => el.value = "");
+  SORT_STATE = {key:null, dir:1};
+  CURRENT_PAGE = 1;
+  updateFundoOptions(); updateAreaOptions();
+  applyFilters();
+});
+document.getElementById('exportBtn').addEventListener('click', exportCSV);
+document.getElementById('loadBtn').addEventListener('click', () => {
+  const url = document.getElementById('sheetUrlInput').value.trim();
+  loadData(url);
+});
+document.getElementById('demoBtn').addEventListener('click', loadDemo);
+
+function debounce(fn, ms){
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+}
+
+/* ======================= INIT ======================= */
+renderHead();
+document.getElementById('sheetUrlInput').value = CONFIG.SHEET_CSV_URL;
+loadData(CONFIG.SHEET_CSV_URL);
+</script>
+</body>
+</html>

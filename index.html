@@ -253,6 +253,23 @@
   }
   .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 
+  .copy-wrap{display:inline-flex; align-items:center; gap:6px; max-width:100%;}
+  .copy-text{white-space:normal; line-height:1.35;}
+  .copy-btn{
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    border-radius:6px;
+    width:22px; height:22px;
+    flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:12px;
+    cursor:pointer;
+    padding:0;
+  }
+  .copy-btn:hover{border-color:var(--sage); color:var(--forest);}
+  .copy-btn.copied{background:var(--sage-pale); border-color:var(--sage); color:var(--forest-deep);}
+
   .badge-status{
     font-family:'JetBrains Mono',monospace;
     font-size:11px;
@@ -363,13 +380,9 @@
         <label for="f-area">Área</label>
         <select id="f-area"><option value="">Todas</option></select>
       </div>
-      <div class="field">
-        <label for="f-idconsumidor">ID Consumidor</label>
-        <input type="text" id="f-idconsumidor" placeholder="Ej. FN.PROD">
-      </div>
-      <div class="field">
-        <label for="f-descripcion">Descripción</label>
-        <input type="text" id="f-descripcion" placeholder="Buscar texto…">
+      <div class="field" style="grid-column:span 2;">
+        <label for="f-busqueda">Buscar (CeCo o Descripción)</label>
+        <input type="text" id="f-busqueda" placeholder="Ej. rieg man → encuentra RIEGO-MANTENIMIENTO">
       </div>
       <div class="field">
         <label for="f-cuenta">Cuenta destino</label>
@@ -624,8 +637,7 @@ function getFilterState(){
     empresa: document.getElementById('f-empresa').value,
     fundo: document.getElementById('f-fundo').value,
     area: document.getElementById('f-area').value,
-    idconsumidor: document.getElementById('f-idconsumidor').value.trim().toLowerCase(),
-    descripcion: document.getElementById('f-descripcion').value.trim().toLowerCase(),
+    busqueda: document.getElementById('f-busqueda').value.trim().toLowerCase(),
     cuenta: document.getElementById('f-cuenta').value,
     jerarquia: document.getElementById('f-jerarquia').value,
     estado: document.getElementById('f-estado').value,
@@ -654,8 +666,12 @@ function applyFilters(resetPage){
     if(f.area && r.AREA !== f.area) return false;
     if(f.cuenta && r.Cuenta_destino !== f.cuenta) return false;
     if(f.jerarquia && r.Jerarquia !== f.jerarquia) return false;
-    if(f.idconsumidor && !(r.Idconsumidor||"").toLowerCase().includes(f.idconsumidor)) return false;
-    if(f.descripcion && !(r.Descripcion||"").toLowerCase().includes(f.descripcion)) return false;
+    if(f.busqueda){
+      const haystack = ((r.Idconsumidor||"") + " " + (r.Descripcion||"")).toLowerCase();
+      const tokens = f.busqueda.split(/\s+/).filter(Boolean);
+      const allMatch = tokens.every(tok => haystack.includes(tok));
+      if(!allMatch) return false;
+    }
     if(f.estado === 'activo' && r.Fecha_baja) return false;
     if(f.estado === 'baja' && !r.Fecha_baja) return false;
     if(f.ingresoDesde || f.ingresoHasta){
@@ -733,10 +749,9 @@ function renderTable(rows){
         chip.appendChild(document.createTextNode(r.EMPRESA));
         td.appendChild(chip);
       } else if(col.key === 'Idconsumidor' && r.Idconsumidor){
-        const chip = document.createElement('span');
-        chip.className = 'code-chip';
-        chip.textContent = r.Idconsumidor;
-        td.appendChild(chip);
+        td.appendChild(makeCopyableCell(r.Idconsumidor, 'chip'));
+      } else if(col.key === 'Descripcion' && r.Descripcion){
+        td.appendChild(makeCopyableCell(r.Descripcion, 'text'));
       } else if(col.key === 'Fecha_baja'){
         if(r.Fecha_baja){
           const b = document.createElement('span');
@@ -759,6 +774,54 @@ function renderTable(rows){
   body.appendChild(frag);
 }
 
+function makeCopyableCell(value, style){
+  const wrap = document.createElement('span');
+  wrap.className = 'copy-wrap';
+
+  const label = document.createElement('span');
+  label.className = style === 'chip' ? 'code-chip' : 'copy-text';
+  label.textContent = value;
+  wrap.appendChild(label);
+
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.type = 'button';
+  btn.title = 'Copiar';
+  btn.innerHTML = '⧉';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    copyToClipboard(value, btn);
+  });
+  wrap.appendChild(btn);
+
+  return wrap;
+}
+
+function copyToClipboard(text, btn){
+  const done = () => {
+    const original = btn.innerHTML;
+    btn.innerHTML = '✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.innerHTML = original; btn.classList.remove('copied'); }, 1100);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+
+function fallbackCopy(text, cb){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand('copy'); cb(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
 function renderEmpty(message){
   const body = document.getElementById('bodyRows');
   body.innerHTML = "";
@@ -775,7 +838,7 @@ function renderChips(f){
   chipRow.innerHTML = "";
   const active = [
     ['empresa', f.empresa], ['fundo', f.fundo], ['area', f.area],
-    ['idconsumidor', f.idconsumidor], ['descripcion', f.descripcion],
+    ['busqueda', f.busqueda],
     ['cuenta', f.cuenta], ['jerarquia', f.jerarquia], ['estado', f.estado],
     ['ingresoDesde', f.ingresoDesde], ['ingresoHasta', f.ingresoHasta]
   ].filter(([,v]) => v);
@@ -795,7 +858,7 @@ function renderChips(f){
 function clearSingleFilter(key){
   const map = {
     empresa:'f-empresa', fundo:'f-fundo', area:'f-area',
-    idconsumidor:'f-idconsumidor', descripcion:'f-descripcion',
+    busqueda:'f-busqueda',
     cuenta:'f-cuenta', jerarquia:'f-jerarquia', estado:'f-estado',
     ingresoDesde:'f-ingreso-desde', ingresoHasta:'f-ingreso-hasta'
   };
@@ -873,7 +936,7 @@ document.getElementById('f-fundo').addEventListener('change', () => { updateArea
 ['f-area','f-cuenta','f-jerarquia','f-estado','f-ingreso-desde','f-ingreso-hasta'].forEach(id => {
   document.getElementById(id).addEventListener('change', applyFilters);
 });
-['f-idconsumidor','f-descripcion'].forEach(id => {
+['f-busqueda'].forEach(id => {
   document.getElementById(id).addEventListener('input', debounce(applyFilters, 200));
 });
 document.getElementById('clearBtn').addEventListener('click', () => {
